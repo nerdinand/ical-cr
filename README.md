@@ -1,6 +1,6 @@
 # ical-cr
 
-TODO: Write a description here
+Not production ready! Early WIP of an ical library for Crystal. Heavy lifting is done by libical, this is really just a binding.
 
 ## Installation
 
@@ -9,7 +9,7 @@ TODO: Write a description here
    ```yaml
    dependencies:
      ical-cr:
-       github: your-github-user/ical-cr
+       github: nerdinand/ical-cr
    ```
 
 2. Run `shards install`
@@ -28,7 +28,7 @@ TODO: Write development instructions here
 
 ## Contributing
 
-1. Fork it (<https://github.com/your-github-user/ical-cr/fork>)
+1. Fork it (<https://github.com/nerdinand/ical-cr/fork>)
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
@@ -36,4 +36,4 @@ TODO: Write development instructions here
 
 ## Contributors
 
-- [Ferdinand Niedermann](https://github.com/your-github-user) - creator and maintainer
+- [Ferdinand Niedermann](https://github.com/nerdinand) - creator and maintainer
