@@ -1,0 +1,9 @@
+name: ical-cr
+version: 0.1.0
+
+authors:
+  - Ferdinand Niedermann <nerdinand@users.noreply.github.com>
+
+crystal: '>= 1.12.1'
+
+license: MIT
