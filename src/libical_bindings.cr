@@ -24,4 +24,5 @@ lib LibIcal
 
   fun count_errors = icalcomponent_count_errors(component : IcalComponent*) : LibC::Int
   fun get_duration = icalcomponent_get_duration(component : IcalComponent*) : IcalDurationType
+  fun as_ical_string = icalcomponent_as_ical_string(component : IcalComponent*) : LibC::Char*
 end

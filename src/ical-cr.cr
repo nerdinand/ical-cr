@@ -1,28 +1,13 @@
 require "./libical_bindings"
+require "./lib/pvl_list"
+require "./lib/ical_parser"
 
 # TODO: Write documentation for `Ical::Cr`
 module IcalCr
   VERSION = "0.1.0"
 
-  class PVLList
-    @pvl_list : LibIcal::PVLList
-    
-    def initialize(@pvl_list)
-    end
-
-    def size
-      @pvl_list.value.count
-    end
-
-    def [](index)
-      current = @pvl_list.value.head
-
-      index.times do 
-        current = current.value.next
-      end
-
-      return current.value.d
-    end
+  def IcalCr.to_string(array : StaticArray(UInt8, 5))
+    String.new(array.to_slice).rstrip('\0')
   end
 
   class IcalSubcomponents < PVLList
@@ -33,100 +18,55 @@ module IcalCr
 
   class IcalProperties < PVLList
     def [](index)
-      super.as(LibIcal::IcalProperty*).value
+      IcalProperty.new(super.as(LibIcal::IcalProperty*).value)
+    end
+  end
+
+  class IcalParameters < PVLList
+    def [](index)
+      IcalProperty.new(super.as(LibIcal::IcalProperty*).value)
+    end
+  end
+
+  class IvalValue
+    @value : LibIcal::IcalValue
+
+    def initialize(@value)
+    end
+
+    def id
+      IcalCr.to_string(@value.id)
     end
   end
   
-  class IcalComponent
-    @component : LibIcal::IcalComponent
-  
-    def initialize(component)
-      @component = component.value
+  class IcalProperty
+    @property : LibIcal::IcalProperty
+
+    def initialize(@property)
     end
-  
+
     def kind
-      LibIcal::IcalComponentKind.new(@component.kind.value)
-    end
-  
-    def name
-      return nil if @component.x_name.null?
-      String.new(@component.x_name)
-    end
-  
-    def properties
-      IcalProperties.new(@component.properties)
+      @property.kind
     end
 
-    def subcomponents
-      IcalSubcomponents.new(@component.components)
+    def id
+      IcalCr.to_string(@property.id)
     end
-  
-    def error_count
-      LibIcal.count_errors(pointerof(@component))
+
+    def parameters
+      IcalParameters.new(@property.parameters)
     end
-  
-    def duration
-      LibIcal.get_duration(pointerof(@component))
+
+    def value
+      IvalValue.new(@property.value.value)
     end
-  
-    def first_child
-      @component.components.head.value
+
+    def name
+      @property.x_name.null? ? nil : String.new(@property.x_name)
     end
-  
-    def finalize
-      LibIcal.free_component(pointerof(@component))
-    end
-  
-    def components
-      @component.components
+
+    def to_s
+      [id, name].compact.join(" ")
     end
   end
-  
-  class IcalParser
-    def initialize
-      @parser = LibIcal.new_parser
-    end
-
-    def parse_io(io : IO)
-      LibIcal.set_gen_data(@parser, pointerof(io))
-        
-      content_line : LibC::Char*? = nil
-
-      loop do
-        content_line = LibIcal.get_line(@parser, -> (str : LibC::Char*, size : LibC::SizeT, data : Void*) : LibC::Char* do
-          line = data.as(IO*).value.gets(size)
-          # p line
-          if line.nil?
-            Pointer(LibC::Char).null
-          else
-            Intrinsics.memcpy(str, line.bytes, line.bytesize, false)
-            str
-          end
-        end)
-
-        c = LibIcal.add_line(@parser, content_line)
-        p LibIcal.get_state(@parser)
-        error_number = LibIcal.error_number().value
-        if error_number != LibIcal::IcalError::ICAL_NO_ERROR
-          raise String.new(LibIcal.error_message(error_number))
-        end
-        
-        unless c.null?
-          return IcalComponent.new(c)
-        end
-      end
-    end
-
-    def parse_string(source : String)
-      parse_io(IO::Memory.new(source))
-    end
-  
-    def parse_file(path : String)
-      parse_io(File.open(path))
-    end
-  
-    def finalize
-      LibIcal.free_parser(@parser)
-    end
-  end  
 end

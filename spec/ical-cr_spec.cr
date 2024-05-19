@@ -1,58 +1,42 @@
 require "./spec_helper"
 require "../src/libical_bindings/ical_property"
 
-EVENT_SOURCE = "BEGIN:VCALENDAR
-PRODID:\"-//RDU Software//NONSGML HandCal//EN\"
-VERSION:2.0
-BEGIN:VTIMEZONE
-TZID:US-Eastern
-BEGIN:STANDARD
-DTSTART:19990404T020000
-RDATE:19990u404xT020000
-TZOFFSETFROM:-0500
-TZOFFSETTO:-0400
-END:STANDARD
-BEGIN:DAYLIGHT
-DTSTART:19990404T020000
-RDATE:19990404T020000
-TZOFFSETFROM:-0500
-TZOFFSETTO:-0400
-TZNAME:EDT
-Dkjhgri:derhvnv;
-BEGIN:dfkjh
-END:dfdfkjh
-END:DAYLIGHT
-END:VTIMEZONE
-BEGIN:VEVENT
-GEO:Bongo
-DTSTAMP:19980309T231000Z
-UID:guid-1.host1.com
-ORGANIZER;ROLE=CHAIR:MAILTO:mrbig@host.com
-ATTENDEE;RSVP=TRUE;ROLE=REQ-PARTICIPANT;CUTYPE=GROUP
- :MAILTO:employee-A@host.com
-DESCRIPTION:Project XYZ Review Meeting
-CATEGORIES:MEETING
-CLASS:PUBLIC
-CREATED:19980309T130000Z
-SUMMARY:XYZ Project Review
-DTSTART;TZID=US-Eastern:19980312T083000
-DTEND;TZID=US-Eastern:19980312T093000
-LOCATION:1CP Conference Room 4350
-END:VEVENT
-END:VCALENDAR
-"
-
 describe IcalCr do
+  describe "Apple Calendar" do
+    it "parses correctly" do
+      ical_component = IcalCr::IcalParser.new.parse_file("spec/fixtures/apple-calendar.ics")
+      ical_component.error_count.should eq(0)
 
-  it "works" do
-    # ical_component = IcalCr::IcalParser.new.parse_file("spec/fixtures/1-1.ics")
-    ical_component = IcalCr::IcalParser.new.parse_string(EVENT_SOURCE)
-    ical_component.kind.should eq(LibIcal::IcalComponentKind::ICAL_VCALENDAR_COMPONENT)
+      ical_component.kind.should eq(LibIcal::IcalComponentKind::ICAL_VCALENDAR_COMPONENT)
 
-    ical_component.properties.size.should eq(2)
-    p ical_component.properties[0]
+      ical_component.duration.hours.should eq(1)
 
-    ical_component.subcomponents.size.should eq(2)
-    p ical_component.subcomponents[0]
+      ical_component.properties.size.should eq(5)
+      property_0 = ical_component.properties[0]
+      property_0.kind.should eq(LibIcal::IcalPropertyKind::ICAL_CARID_PROPERTY)
+      property_0.parameters.size.should eq(0)
+      p property_0
+      p property_0.to_s
+
+      property_1 = ical_component.properties[1]
+      property_1.parameters.size.should eq(0)
+      p property_1
+      p property_1.to_s
+
+      property_2 = ical_component.properties[2]
+      property_2.parameters.size.should eq(0)
+      p property_2
+      p property_2.to_s
+
+      property_3 = ical_component.properties[3]
+      property_3.parameters.size.should eq(0)
+      p property_3
+      p property_3.to_s
+
+      property_4 = ical_component.properties[4]
+      property_4.parameters.size.should eq(0)
+      p property_4
+      p property_4.to_s
+    end
   end
 end
