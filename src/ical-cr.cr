@@ -4,21 +4,36 @@ require "./libical_bindings"
 module IcalCr
   VERSION = "0.1.0"
 
-  class IcalSubcomponents
-    @pvl_list : LibIcal::PvlList
+  class PVLList
+    @pvl_list : LibIcal::PVLList
     
     def initialize(@pvl_list)
     end
-  
+
     def size
-      @pvl_list.count
+      @pvl_list.value.count
+    end
+
+    def [](index)
+      current = @pvl_list.value.head
+
+      index.times do 
+        current = current.value.next
+      end
+
+      return current.value.d
     end
   end
-  
-  class ComponentIterator
-    @pvl_elem : LibIcal::PvlElem
-  
-    def initialize(@pvl_elem)
+
+  class IcalSubcomponents < PVLList
+    def [](index)
+      super.as(LibIcal::IcalComponent*).value
+    end
+  end
+
+  class IcalProperties < PVLList
+    def [](index)
+      super.as(LibIcal::IcalProperty*).value
     end
   end
   
@@ -38,12 +53,12 @@ module IcalCr
       String.new(@component.x_name)
     end
   
+    def properties
+      IcalProperties.new(@component.properties)
+    end
+
     def subcomponents
       IcalSubcomponents.new(@component.components)
-    end
-  
-    def component_iterator
-      ComponentIterator.new(@component.component_iterator)
     end
   
     def error_count
@@ -55,9 +70,7 @@ module IcalCr
     end
   
     def first_child
-      # @component.property_iterator.next.value.d.as(IcalComponent*)
       @component.components.head.value
-      # .as(IcalComponent*)
     end
   
     def finalize
@@ -73,37 +86,43 @@ module IcalCr
     def initialize
       @parser = LibIcal.new_parser
     end
-  
-    def parse_file(path : String)
-      File.open(path) do |file|
-        LibIcal.set_gen_data(@parser, pointerof(file))
+
+    def parse_io(io : IO)
+      LibIcal.set_gen_data(@parser, pointerof(io))
         
-        content_line : LibC::Char*? = nil
-  
-        loop do
-          content_line = LibIcal.get_line(@parser, -> (str : LibC::Char*, size : LibC::SizeT, data : Void*) : LibC::Char* do
-            line = data.as(File*).value.gets(size)
-            # p line
-            if line.nil?
-              Pointer(LibC::Char).null
-            else
-              Intrinsics.memcpy(str, line.bytes, line.bytesize, false)
-              str
-            end
-          end)
-  
-          c = LibIcal.add_line(@parser, content_line)
-          # p LibIcal.get_state(@parser)
-          error_number = LibIcal.error_number().value
-          if error_number != LibIcal::IcalError::ICAL_NO_ERROR
-            raise String.new(LibIcal.error_message(error_number))
+      content_line : LibC::Char*? = nil
+
+      loop do
+        content_line = LibIcal.get_line(@parser, -> (str : LibC::Char*, size : LibC::SizeT, data : Void*) : LibC::Char* do
+          line = data.as(IO*).value.gets(size)
+          # p line
+          if line.nil?
+            Pointer(LibC::Char).null
+          else
+            Intrinsics.memcpy(str, line.bytes, line.bytesize, false)
+            str
           end
-          
-          unless c.null?
-            return IcalComponent.new(c)
-          end
+        end)
+
+        c = LibIcal.add_line(@parser, content_line)
+        p LibIcal.get_state(@parser)
+        error_number = LibIcal.error_number().value
+        if error_number != LibIcal::IcalError::ICAL_NO_ERROR
+          raise String.new(LibIcal.error_message(error_number))
+        end
+        
+        unless c.null?
+          return IcalComponent.new(c)
         end
       end
+    end
+
+    def parse_string(source : String)
+      parse_io(IO::Memory.new(source))
+    end
+  
+    def parse_file(path : String)
+      parse_io(File.open(path))
     end
   
     def finalize
